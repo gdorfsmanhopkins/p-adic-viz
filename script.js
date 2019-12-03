@@ -10,62 +10,149 @@ var screenWidth = screen.width;
 var screenHeight = screen.height;
 var origin = [screenWidth/2,2*screenHeight/5];
 
+
 //Choose my prime and my resolution (i.e., n such that I'm drawing Z/p^n)
-var p = 5;
-var n = 5;
+var p = 2;
+var n = 12;
+//Also the settings for the linear function I will apply: f(x) = mx+b
+var m = 1;
+var b = 0;
+//And why not exponentiation
+var A = 1;
+var e = 0;
 
-//initialize the animation queue:
+//initialize the animation queue, pointslist and colors:
 var animationQueue = [];
-
-//And my points
 var points = [];
-
-//populate the list of points in their initial positions:
-points.push(origin);
-for(var i=1;i<p**n;i++){
-  //first compute the p-adic valuation of i,
-  var val=1;
-  while((i)%(p**val)==0){
-    val++;
-  }
-  //Higher powers of p should be closer to the origin
-  radius = screenHeight/(3*val*val);
-  //Figure out our rotation;
-  var theta = 2*Math.PI*i/p**n
-  var center = [origin[0] + radius*Math.cos(theta),origin[1] + radius*Math.sin(theta)];
-  points.push(center);
-}
-//Also populate a list of colors:
 var colors = [];
-for(var i=0;i<p**n;i++){
-  var j = Math.floor(100*i/(p**n-1));
-  colors.push('#'+rainbow.colourAt(j));
-}
+initializePointsList();
 
-drawPoints();
-
-
-//Let's set up the animation:
-function animate(){
-  time = performance.now();
-  for(i=0;i<animationQueue.length;i++){
-    //t is the percentage of the animation that is finished
-    const t = (time-animationQueue[i].start)/animationQueue[i].duration;
-    //console.log(t);
-    if(t>1){
-      var finisher = animationQueue[i];
-      animationQueue.splice(i,1);
-      i-=1;
-      finisher.finish();
-    }
-    else if (t>=0){
-      animationQueue[i].callback(t);
-    }
+//Initialize the settings GUI
+var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Settings")
+settings.addDropDown("Prime",[2,3,5,7],function setPrime(value){
+  console.log(value)
+  p=value.value;
+  if(p==2){
+    n=12;
   }
-  requestAnimationFrame(animate);
-}
-requestAnimationFrame(animate);
+  if(p==3){
+    n=8;
+  }
+  if(p==5){
+    n=5;
+  }
+  if(p==7){
+    n=4;
+  }
+  initializePointsList();
+  drawPoints();
+});
+settings.addNumber("Multiply by m",-(p**n),p**n,1,1,function setMultiplyer(value){m=value});
+settings.addNumber("Add b",-(p**n),p**n,0,1,function setAddition(value){b = value});
+settings.addButton("Apply f(x) = mx+b",function applyLinearFunction(){
+  //We begin by computing the start and end points of each points, and saving them in the following lists.
+  var initial = [];
+  var final = [];
+  for(var i=0;i<p**n;i++){
+    initial.push(points[i]);
+    final.push(computeLocation(m*i + b));
+  }
+  //Then push the movement to the animation queue:
+  animationQueue.push({
+    start: performance.now(),
+    duration: 5000,
+    initial: initial,
+    final: final,
+    callback: (t) => {
 
+      //console.log("Callback time: ",t);
+      for(var i=0;i<p**n;i++){
+        //console.log(i);
+        //console.log("initial");
+        //console.log(initial[i]);
+        //console.log("final");
+        //console.log(final[i]);
+        var newX = (1-t)*initial[i][0] + t*final[i][0];
+        var newY = (1-t)*initial[i][1] + t*final[i][1];
+        points[i] = [newX,newY];
+      }
+      drawPoints();
+    },
+    finish: () => {
+      console.log("finishing");
+      points = final;
+      drawPoints();
+    }
+  })
+
+});
+settings.addNumber("Exponential coefficient A",-(p**n),p**n,1,1,function setExpMultiplyer(value){A = value});
+settings.addNumber("Exponentiate by e",-(p*p),p*p,0,1,function setExponent(value){e = value});
+settings.addButton("Apply f(x) = Ax^e",function applyExponentiation(){
+  //We begin by computing the start and end points of each points, and saving them in the following lists.
+  var initial = [];
+  var final = [];
+  for(var i=0;i<p**n;i++){
+    initial.push(points[i]);
+    final.push(computeLocation(A*(i**e)));
+  }
+  //Then push the movement to the animation queue:
+  animationQueue.push({
+    start: performance.now(),
+    duration: 5000,
+    initial: initial,
+    final: final,
+    callback: (t) => {
+
+      //console.log("Callback time: ",t);
+      for(var i=0;i<p**n;i++){
+        //console.log(i);
+        //console.log("initial");
+        //console.log(initial[i]);
+        //console.log("final");
+        //console.log(final[i]);
+        var newX = (1-t)*initial[i][0] + t*final[i][0];
+        var newY = (1-t)*initial[i][1] + t*final[i][1];
+        points[i] = [newX,newY];
+      }
+      drawPoints();
+    },
+    finish: () => {
+      console.log("finishing");
+      points = final;
+      drawPoints();
+    }
+  })
+
+});
+settings.addButton("Reset",function reset(){initializePointsList();drawPoints()});
+
+//p-adic stuff
+function initializePointsList(){
+  points = [];
+
+  //populate the list of points in their initial positions:
+  points.push(origin);
+  for(var i=1;i<p**n;i++){
+    //first compute the p-adic valuation of i,
+    var val=1;
+    while((i)%(p**val)==0){
+      val++;
+    }
+    //Higher powers of p should be closer to the origin
+    radius = screenHeight/(3*val*val);
+    //Figure out our rotation;
+    var theta = 2*Math.PI*i/p**n
+    var center = [origin[0] + radius*Math.cos(theta),origin[1] + radius*Math.sin(theta)];
+    points.push(center);
+  }
+  //Also populate a list of colors:
+  colors = [];
+  for(var i=0;i<p**n;i++){
+    var j = Math.floor(100*i/(p**n-1));
+    colors.push('#'+rainbow.colourAt(j));
+  }
+}
 //This draws the points to their current location (using the global array points).  It clears the screen first.  It also applies color.
 function drawPoints(){
   ctx.clearRect(0,0,screenWidth,screenHeight);
@@ -77,28 +164,25 @@ function drawPoints(){
     ctx.fill();
   }
 }
-
-//computes the location of a point
-function computeLocation(i){
+//computes the location of a p-adic number
+function computeLocation(t){
   //We know where zero goes:
-  if(i==0){
+  if(t==0){
     return origin;
   }
   //Otherwise...
   //first compute the p-adic valuation of i,
   var val=1;
-  while((i)%(p**val)==0){
+  while((t)%(p**val)==0){
     val++;
   }
   //Higher powers of p should be closer to the origin
   radius = screenHeight/(3*val*val);
   //Figure out our rotation;
-  var theta = 2*Math.PI*i/p**n
+  var theta = 2*Math.PI*t/p**n
   return [origin[0] + radius*Math.cos(theta),origin[1] + radius*Math.sin(theta)];
 
 }
-
-//Let's try multiplication by m:
 function multiply(m){
   //console.log("multiplying by",m);
   //We begin by computing the start and end points of each points, and saving them in the following lists.
@@ -136,49 +220,31 @@ function multiply(m){
     }
   })
 }
-
-function applyFunction(f){
-  //We begin by computing the start and end points of each points, and saving them in the following lists.
-  var initial = [];
-  var final = [];
-  for(var i=0;i<p**n;i++){
-    initial.push(points[i]);
-    final.push(computeLocation(f(i)));
-  }
-  //Then push the movement to the animation queue:
-  animationQueue.push({
-    start: performance.now(),
-    duration: 5000,
-    initial: initial,
-    final: final,
-    callback: (t) => {
-
-      //console.log("Callback time: ",t);
-      for(var i=0;i<p**n;i++){
-        //console.log(i);
-        //console.log("initial");
-        //console.log(initial[i]);
-        //console.log("final");
-        //console.log(final[i]);
-        var newX = (1-t)*initial[i][0] + t*final[i][0];
-        var newY = (1-t)*initial[i][1] + t*final[i][1];
-        points[i] = [newX,newY];
-      }
-      drawPoints();
-    },
-    finish: () => {
-      console.log("finishing");
-      points = final;
-      drawPoints();
-    }
-  })
-}
-
 function f(x){
-  return -5*x;
+  return m*x + b;
 }
-applyFunction(f);
-//applyFunction(f);
+
+//Animation functions!
+function animate(){
+  time = performance.now();
+  for(i=0;i<animationQueue.length;i++){
+    //t is the percentage of the animation that is finished
+    const t = (time-animationQueue[i].start)/animationQueue[i].duration;
+    //console.log(t);
+    if(t>1){
+      var finisher = animationQueue[i];
+      animationQueue.splice(i,1);
+      i-=1;
+      finisher.finish();
+    }
+    else if (t>=0){
+      animationQueue[i].callback(t);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
 /*
 var time = performance.now();
 for(var k=0;k<24;k++){
