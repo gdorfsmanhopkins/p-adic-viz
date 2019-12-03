@@ -35,6 +35,13 @@ for(var i=1;i<p**n;i++){
   var center = [origin[0] + radius*Math.cos(theta),origin[1] + radius*Math.sin(theta)];
   points.push(center);
 }
+//Also populate a list of colors:
+var colors = [];
+for(var i=0;i<p**n;i++){
+  var j = Math.floor(100*i/(p**n-1));
+  colors.push('#'+rainbow.colourAt(j));
+}
+
 drawPoints();
 
 
@@ -59,13 +66,14 @@ function animate(){
 }
 requestAnimationFrame(animate);
 
-//This draws the points to their current location (using the global array points).  It clears the screen first
+//This draws the points to their current location (using the global array points).  It clears the screen first.  It also applies color.
 function drawPoints(){
   ctx.clearRect(0,0,screenWidth,screenHeight);
   for(var i=0;i<p**n;i++){
     ctx.beginPath();
     ctx.moveTo(points[i][0],points[i][1]);
     ctx.arc(points[i][0],points[i][1],1,0,2*Math.PI);
+    ctx.fillStyle = colors[i];
     ctx.fill();
   }
 }
@@ -92,7 +100,7 @@ function computeLocation(i){
 
 //Let's try multiplication by m:
 function multiply(m){
-  console.log("multiplying by",m);
+  //console.log("multiplying by",m);
   //We begin by computing the start and end points of each points, and saving them in the following lists.
   var initial = [];
   var final = [];
@@ -128,6 +136,50 @@ function multiply(m){
     }
   })
 }
+
+function applyFunction(f){
+  //We begin by computing the start and end points of each points, and saving them in the following lists.
+  var initial = [];
+  var final = [];
+  for(var i=0;i<p**n;i++){
+    initial.push(points[i]);
+    final.push(computeLocation(f(i)));
+  }
+  //Then push the movement to the animation queue:
+  animationQueue.push({
+    start: performance.now(),
+    duration: 5000,
+    initial: initial,
+    final: final,
+    callback: (t) => {
+
+      //console.log("Callback time: ",t);
+      for(var i=0;i<p**n;i++){
+        //console.log(i);
+        //console.log("initial");
+        //console.log(initial[i]);
+        //console.log("final");
+        //console.log(final[i]);
+        var newX = (1-t)*initial[i][0] + t*final[i][0];
+        var newY = (1-t)*initial[i][1] + t*final[i][1];
+        points[i] = [newX,newY];
+      }
+      drawPoints();
+    },
+    finish: () => {
+      console.log("finishing");
+      points = final;
+      drawPoints();
+    }
+  })
+}
+
+function f(x){
+  return -5*x;
+}
+applyFunction(f);
+//applyFunction(f);
+/*
 var time = performance.now();
 for(var k=0;k<24;k++){
   const multiplyer = k+2;
@@ -139,3 +191,4 @@ for(var k=0;k<24;k++){
     finish: () => {multiply(multiplyer)},
   })
 }
+*/
