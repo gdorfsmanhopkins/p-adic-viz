@@ -20,6 +20,9 @@ var b = 0;
 //And why not exponentiation
 var A = 1;
 var e = 0;
+//Trace lines?
+var traceLines = false;
+
 
 //initialize the animation queue, pointslist and colors:
 var animationQueue = [];
@@ -29,7 +32,7 @@ initializePointsList();
 
 //Initialize the settings GUI
 var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Settings")
-settings.addDropDown("Prime",[2,3,5,7],function setPrime(value){
+settings.addDropDown("Prime",[2,3,5,7,11],function setPrime(value){
   console.log(value)
   p=value.value;
   if(p==2){
@@ -44,87 +47,19 @@ settings.addDropDown("Prime",[2,3,5,7],function setPrime(value){
   if(p==7){
     n=4;
   }
+  if(p==11){
+    n=3;
+  }
   initializePointsList();
   drawPoints();
 });
+settings.addBoolean("Trace Lines",false,function traceSwap(value){traceLines = value})
 settings.addNumber("Multiply by m",-(p**n),p**n,1,1,function setMultiplyer(value){m=value});
 settings.addNumber("Add b",-(p**n),p**n,0,1,function setAddition(value){b = value});
-settings.addButton("Apply f(x) = mx+b",function applyLinearFunction(){
-  //We begin by computing the start and end points of each points, and saving them in the following lists.
-  var initial = [];
-  var final = [];
-  for(var i=0;i<p**n;i++){
-    initial.push(points[i]);
-    final.push(computeLocation(m*i + b));
-  }
-  //Then push the movement to the animation queue:
-  animationQueue.push({
-    start: performance.now(),
-    duration: 5000,
-    initial: initial,
-    final: final,
-    callback: (t) => {
-
-      //console.log("Callback time: ",t);
-      for(var i=0;i<p**n;i++){
-        //console.log(i);
-        //console.log("initial");
-        //console.log(initial[i]);
-        //console.log("final");
-        //console.log(final[i]);
-        var newX = (1-t)*initial[i][0] + t*final[i][0];
-        var newY = (1-t)*initial[i][1] + t*final[i][1];
-        points[i] = [newX,newY];
-      }
-      drawPoints();
-    },
-    finish: () => {
-      console.log("finishing");
-      points = final;
-      drawPoints();
-    }
-  })
-
-});
+settings.addButton("Apply f(x) = mx+b",function applyLinearFunction(){applyFunction(function f(x){return m*x+b})});
 settings.addNumber("Exponential coefficient A",-(p**n),p**n,1,1,function setExpMultiplyer(value){A = value});
 settings.addNumber("Exponentiate by e",-(p*p),p*p,0,1,function setExponent(value){e = value});
-settings.addButton("Apply f(x) = Ax^e",function applyExponentiation(){
-  //We begin by computing the start and end points of each points, and saving them in the following lists.
-  var initial = [];
-  var final = [];
-  for(var i=0;i<p**n;i++){
-    initial.push(points[i]);
-    final.push(computeLocation(A*(i**e)));
-  }
-  //Then push the movement to the animation queue:
-  animationQueue.push({
-    start: performance.now(),
-    duration: 5000,
-    initial: initial,
-    final: final,
-    callback: (t) => {
-
-      //console.log("Callback time: ",t);
-      for(var i=0;i<p**n;i++){
-        //console.log(i);
-        //console.log("initial");
-        //console.log(initial[i]);
-        //console.log("final");
-        //console.log(final[i]);
-        var newX = (1-t)*initial[i][0] + t*final[i][0];
-        var newY = (1-t)*initial[i][1] + t*final[i][1];
-        points[i] = [newX,newY];
-      }
-      drawPoints();
-    },
-    finish: () => {
-      console.log("finishing");
-      points = final;
-      drawPoints();
-    }
-  })
-
-});
+settings.addButton("Apply f(x) = Ax^e",function applyExponentiation(){applyFunction(function f(x){return A*(x**e)})});
 settings.addButton("Reset",function reset(){initializePointsList();drawPoints()});
 
 //p-adic stuff
@@ -183,14 +118,13 @@ function computeLocation(t){
   return [origin[0] + radius*Math.cos(theta),origin[1] + radius*Math.sin(theta)];
 
 }
-function multiply(m){
-  //console.log("multiplying by",m);
+function applyFunction(f){
   //We begin by computing the start and end points of each points, and saving them in the following lists.
   var initial = [];
   var final = [];
   for(var i=0;i<p**n;i++){
     initial.push(points[i]);
-    final.push(computeLocation(m*i));
+    final.push(computeLocation(f(i)));
   }
   //Then push the movement to the animation queue:
   animationQueue.push({
@@ -199,29 +133,34 @@ function multiply(m){
     initial: initial,
     final: final,
     callback: (t) => {
-
-      //console.log("Callback time: ",t);
       for(var i=0;i<p**n;i++){
-        //console.log(i);
-        //console.log("initial");
-        //console.log(initial[i]);
-        //console.log("final");
-        //console.log(final[i]);
         var newX = (1-t)*initial[i][0] + t*final[i][0];
         var newY = (1-t)*initial[i][1] + t*final[i][1];
         points[i] = [newX,newY];
       }
       drawPoints();
+      if(traceLines){
+        trace(initial);
+      }
     },
     finish: () => {
-      console.log("finishing");
       points = final;
       drawPoints();
+      if(traceLines){
+        trace(initial);
+      }
     }
   })
 }
-function f(x){
-  return m*x + b;
+//trace lines:
+function trace(from){
+  for(var i=0;i<p**n;i++){
+    ctx.beginPath();
+    ctx.moveTo(from[i][0],from[i][1]);
+    ctx.lineTo(points[i][0],points[i][1]);
+    ctx.strokeStyle = colors[i];
+    ctx.stroke();
+  }
 }
 
 //Animation functions!
@@ -244,17 +183,3 @@ function animate(){
   requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
-
-/*
-var time = performance.now();
-for(var k=0;k<24;k++){
-  const multiplyer = k+2;
-  animationQueue.push({
-    start: time + 5000*(k),
-    multiplyer: multiplyer,
-    duration: 50,
-    callback: (t) => {},
-    finish: () => {multiply(multiplyer)},
-  })
-}
-*/
