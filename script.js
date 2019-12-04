@@ -32,6 +32,7 @@ var animationQueue = [];
 var points = [];
 var colors = [];
 initializePointsList();
+drawPoints();
 
 //Initialize the settings GUI
 var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Settings")
