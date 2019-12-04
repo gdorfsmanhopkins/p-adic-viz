@@ -1,6 +1,9 @@
 var rainbow = new Rainbow(); //use this to generate colors programatically
 
 var canvas = document.getElementById('canvas');
+canvas.setAttribute('width', window.innerWidth);
+canvas.setAttribute('height', window.innerHeight);
+
 var ctx = canvas.getContext('2d');
 var params = { fullscreen: true };
 //var two = new Two(params).appendTo(elem);
@@ -33,7 +36,6 @@ initializePointsList();
 //Initialize the settings GUI
 var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Settings")
 settings.addDropDown("Prime",[2,3,5,7,11],function setPrime(value){
-  console.log(value)
   p=value.value;
   if(p==2){
     n=12;
