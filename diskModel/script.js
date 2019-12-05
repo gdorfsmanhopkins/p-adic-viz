@@ -1,3 +1,12 @@
+/*
+*
+* TO DO:
+* * Allow for meaningful iteration of functions
+* * Figure out floating point error stuff
+* * Make it phone compatible
+*
+*/
+
 var rainbow = new Rainbow(); //use this to generate colors programatically
 
 var canvas = document.getElementById('canvas');

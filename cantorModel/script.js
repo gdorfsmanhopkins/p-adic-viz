@@ -1,3 +1,17 @@
+/*
+*
+* TO DOL
+* * Allow for meaningful iteration of functions
+* * Implement everything in p-adic digits
+* * Restructure the animation to be consistent across scales
+* * Fix exponentiation bugs:
+* * * Floating point errors which explode stuff
+* * * Cubing being surjective mod 5?????
+* * Get the right sizing options working.
+*
+*/
+
+
 var rainbow = new Rainbow(); //use this to generate colors programatically
 
 var canvas = document.getElementById('canvas');
