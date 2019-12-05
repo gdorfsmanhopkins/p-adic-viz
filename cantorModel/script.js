@@ -15,8 +15,8 @@ var origin = [screenWidth/2,2*screenHeight/5];
 
 
 //Choose my prime and my resolution (i.e., n such that I'm drawing Z/p^n)
-var p = 5;
-var n = 5;
+var p = 7;
+var n = 4;
 //Also the settings for the linear function I will apply: f(x) = mx+b
 var m = 2;
 var b = 0;
@@ -33,7 +33,7 @@ var points = [];
 var colors = [];
 initializePointsList();
 drawPoints();
-//applyFunction(function f(x){return 5*x});
+applyFunction(function f(x){return 5*x});
 
 /*
 //Initialize the settings GUI
@@ -94,7 +94,7 @@ function drawPoints(){
   for(var i=0;i<p**n;i++){
     ctx.beginPath();
     ctx.moveTo(points[i][0],points[i][1]);
-    ctx.arc(points[i][0],points[i][1],3,0,2*Math.PI);
+    ctx.arc(points[i][0],points[i][1],1,0,2*Math.PI);
     ctx.fillStyle = colors[i];
     ctx.fill();
   }
@@ -110,8 +110,8 @@ function computeLocation(t){
     if(t[i]){
       var theta = 2*Math.PI*t[i]/p;
       var radius = screenHeight/(3*((i+1)**(3)));
-      coordinates[0] += radius*Math.cos(theta);
-      coordinates[1] += radius*Math.sin(theta);
+      coordinates[0] += radius*Math.cos(-theta);
+      coordinates[1] += radius*Math.sin(-theta);
     }
   }
   return coordinates;
@@ -124,7 +124,7 @@ function applyFunction(f){
   var final = [];
   for(var i=0;i<p**n;i++){
     initial.push(points[i]);
-    //note, we use i-1 since we start counting at 1 when initializing.  This may be necessary to fix later.
+    //note, we use i+1 since we start counting at 1 when initializing.  This may be necessary to fix later.
     final.push(computeLocation(computeBaseP(f(i+1))));
   }
   //Then push the movement to the animation queue:
