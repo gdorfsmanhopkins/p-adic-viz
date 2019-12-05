@@ -16,7 +16,7 @@ var origin = [screenWidth/2,2*screenHeight/5];
 
 //Choose my prime and my resolution (i.e., n such that I'm drawing Z/p^n)
 var p = 3;
-var n = 8;
+var n = 7;
 //Also the settings for the linear function I will apply: f(x) = mx+b
 var m = 1;
 var b = 0;
@@ -38,6 +38,9 @@ drawPoints();
 var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Settings")
 settings.addDropDown("Prime",[3,5,7,11],function setPrime(value){
   p=value.value;
+  /*if(p==2){
+    n=11;
+  }*/
   if(p==3){
     n=7;
   }
@@ -79,8 +82,15 @@ function initializePointsList(){
     //First compute i in base p, then compute the location and add it to the list
     var b = computeBaseP(i)
     points.push(computeLocation(b));
-    //It might be worth initializing the colors list as well:
-    j = (100*b[0]/p) + 5*b.length;
+    //It might be worth initializing the colors list as well.  Try to weight it p-adically (so close colors are close)
+    j = 0;
+    for(var k=0;k<n;k++){
+      if(b[k]){
+        j += b[k]*(p**(n-k));
+      }
+    }
+    j=100*j/p**(n+1);
+    //console.log(j);
     colors.push('#'+rainbow.colourAt(j));
   }
 }
@@ -103,17 +113,19 @@ function computeLocation(t){
   for(var i=0;i<n;i++){
     //if(t[i]) does the asymetric disk model
     //if(t[i]>=0) does the symmetric model with 0 in the corner
-    if(t[i] || t[i]==0){
-      var theta = 2*Math.PI*t[i]/p;
-      var radius = screenHeight/(3*((i+1)**(3)));
-      coordinates[0] += radius*Math.cos(-theta);
-      coordinates[1] += radius*Math.sin(-theta);
+    var radius = screenHeight/(3*((i+1)**(3)));
+    var theta;
+    if(t[i]){
+      theta = 2*Math.PI*t[i]/p;
     }
+    else{
+      theta = 0;
+    }
+    coordinates[0] += radius*Math.cos(-theta);
+    coordinates[1] += radius*Math.sin(-theta);
   }
   return coordinates;
 }
-
-
 function applyFunction(f){
   //We begin by computing the start and end points of each points, and saving them in the following lists.
   var initial = [];
@@ -159,7 +171,6 @@ function trace(from){
     ctx.stroke();
   }
 }
-
 //Animation functions!
 function animate(){
   time = performance.now();
