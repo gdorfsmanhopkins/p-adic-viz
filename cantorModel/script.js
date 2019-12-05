@@ -15,10 +15,10 @@ var origin = [screenWidth/2,2*screenHeight/5];
 
 
 //Choose my prime and my resolution (i.e., n such that I'm drawing Z/p^n)
-var p = 7;
-var n = 4;
+var p = 3;
+var n = 8;
 //Also the settings for the linear function I will apply: f(x) = mx+b
-var m = 2;
+var m = 1;
 var b = 0;
 //And why not exponentiation
 var A = 1;
@@ -33,18 +33,13 @@ var points = [];
 var colors = [];
 initializePointsList();
 drawPoints();
-applyFunction(function f(x){return 5*x});
 
-/*
 //Initialize the settings GUI
 var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Settings")
-settings.addDropDown("Prime",[2,3,5,7,11],function setPrime(value){
+settings.addDropDown("Prime",[3,5,7,11],function setPrime(value){
   p=value.value;
-  if(p==2){
-    n=12;
-  }
   if(p==3){
-    n=8;
+    n=7;
   }
   if(p==5){
     n=5;
@@ -63,10 +58,10 @@ settings.addNumber("Multiply by m",-(p**n),p**n,1,1,function setMultiplyer(value
 settings.addNumber("Add b",-(p**n),p**n,0,1,function setAddition(value){b = value});
 settings.addButton("Apply f(x) = mx+b",function applyLinearFunction(){applyFunction(function f(x){return m*x+b})});
 settings.addNumber("Exponential coefficient A",-(p**n),p**n,1,1,function setExpMultiplyer(value){A = value});
-settings.addNumber("Exponentiate by e",-(p*p),p*p,0,1,function setExponent(value){e = value});
+settings.addNumber("Exponentiate by e",-(p*p),p*p,1,1,function setExponent(value){e = value});
 settings.addButton("Apply f(x) = Ax^e",function applyExponentiation(){applyFunction(function f(x){return A*(x**e)})});
 settings.addButton("Reset",function reset(){initializePointsList();drawPoints()});
-*/
+
 //p-adic stuff
 function computeBaseP(n){
   var digits = [];
@@ -79,6 +74,7 @@ function computeBaseP(n){
 }
 function initializePointsList(){
   points = [];
+  colors = [];
   for(var i=1;i<p**n+1;i++){
     //First compute i in base p, then compute the location and add it to the list
     var b = computeBaseP(i)
@@ -107,7 +103,7 @@ function computeLocation(t){
   for(var i=0;i<n;i++){
     //if(t[i]) does the asymetric disk model
     //if(t[i]>=0) does the symmetric model with 0 in the corner
-    if(t[i]){
+    if(t[i] || t[i]==0){
       var theta = 2*Math.PI*t[i]/p;
       var radius = screenHeight/(3*((i+1)**(3)));
       coordinates[0] += radius*Math.cos(-theta);
