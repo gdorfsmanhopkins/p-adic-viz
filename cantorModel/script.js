@@ -1,13 +1,15 @@
 /*
 *
-* TO DOL
+* TO DO
 * * Allow for meaningful iteration of functions
-* * Implement everything in p-adic digits
+* * Implement everything in p-adic digits (Maybe don't do this)
 * * Restructure the animation to be consistent across scales
 * * Fix exponentiation bugs:
 * * * Floating point errors which explode stuff
 * * * Cubing being surjective mod 5?????
 * * Get the right sizing options working.
+* * Optomize to improve speed (this may be just a canvas issue?)
+* * Introduce transparency to tracers
 *
 */
 
@@ -39,45 +41,68 @@ var A = 1;
 var e = 1;
 //Trace lines?
 var traceLines = false;
+//Drawing points adjusted for each size via these variables
+var radMult = 3;
+var radExp = 2.5;
+var pointRadius = 1;
+//Make the color scheme adjustable
+var colorMix = 1;
 
 
 //initialize the animation queue, pointslist and colors:
 var animationQueue = [];
 var points = [];
 var colors = [];
-initializePointsList();
-drawPoints();
+initialize();
 
 //Initialize the settings GUI
 var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Settings")
 settings.addDropDown("Prime",[3,5,7,11],function setPrime(value){
   p=value.value;
-  /*if(p==2){
+  if(p==2){
     n=11;
-  }*/
+  }
   if(p==3){
     n=7;
+    radMult = 3;
+    radExp = 2.5;
+    pointRadius = 1;
   }
   if(p==5){
     n=5;
+    radMult = 3;
+    radExp = 2.8;
+    pointRadius = 1;
   }
   if(p==7){
     n=4;
+    radMult = 3;
+    radExp = 2.8;
+    pointRadius = 1.5;
   }
   if(p==11){
     n=3;
+    radMult = 3;
+    radExp = 3;
+    pointRadius = 2;
   }
-  initializePointsList();
-  drawPoints();
+  initialize();
 });
 settings.addBoolean("Trace Lines",false,function traceSwap(value){traceLines = value})
+settings.addRange("Color Adjustment",0,100,0,1,function adjustColor(value){
+  console.log("calling")
+  colorMix = 1+value/100;
+  console.log(colorMix);
+  initializeColors();
+  drawPoints();
+})
 settings.addNumber("Multiply by m",-(p**n),p**n,1,1,function setMultiplyer(value){m=value});
 settings.addNumber("Add b",-(p**n),p**n,0,1,function setAddition(value){b = value});
 settings.addButton("Apply f(x) = mx+b",function applyLinearFunction(){applyFunction(function f(x){return m*x+b})});
 settings.addNumber("Exponential coefficient A",-(p**n),p**n,1,1,function setExpMultiplyer(value){A = value});
 settings.addNumber("Exponentiate by e",-(p*p),p*p,1,1,function setExponent(value){e = value});
 settings.addButton("Apply f(x) = Ax^e",function applyExponentiation(){applyFunction(function f(x){return A*(x**e)})});
-settings.addButton("Reset",function reset(){initializePointsList();drawPoints()});
+settings.addButton("Reset",function redo(){initialize()});
 
 //p-adic stuff
 function computeBaseP(n){
@@ -89,21 +114,29 @@ function computeBaseP(n){
   }
   return digits;
 }
+function initialize(){
+  initializePointsList();
+  initializeColors();
+  drawPoints();
+}
 function initializePointsList(){
   points = [];
-  colors = [];
   for(var i=1;i<p**n+1;i++){
     //First compute i in base p, then compute the location and add it to the list
-    var b = computeBaseP(i)
-    points.push(computeLocation(b));
-    //It might be worth initializing the colors list as well.  Try to weight it p-adically (so close colors are close)
+    points.push(computeLocation(computeBaseP(i)));
+  }
+}
+function initializeColors(){
+  colors = []
+  for(var i=1;i<p**n+1;i++){
+    var b = computeBaseP(i);
     j = 0;
     for(var k=0;k<n;k++){
       if(b[k]){
-        j += b[k]*(p**(n-k));
+        j += b[k]*(p**((colorMix)*n-(colorMix)*k));
       }
     }
-    j=100*j/p**(n+1);
+    j=100*j/p**(colorMix*n + 1);
     //console.log(j);
     colors.push('#'+rainbow.colourAt(j));
   }
@@ -114,7 +147,7 @@ function drawPoints(){
   for(var i=0;i<p**n;i++){
     ctx.beginPath();
     ctx.moveTo(points[i][0],points[i][1]);
-    ctx.arc(points[i][0],points[i][1],1,0,2*Math.PI);
+    ctx.arc(points[i][0],points[i][1],pointRadius,0,2*Math.PI);
     ctx.fillStyle = colors[i];
     ctx.fill();
   }
@@ -127,7 +160,7 @@ function computeLocation(t){
   for(var i=0;i<n;i++){
     //if(t[i]) does the asymetric disk model
     //if(t[i]>=0) does the symmetric model with 0 in the corner
-    var radius = screenHeight/(3*((i+1)**(3)));
+    var radius = screenHeight/(radMult*((i+1)**radExp));
     var theta;
     if(t[i]){
       theta = 2*Math.PI*t[i]/p;
@@ -152,7 +185,7 @@ function applyFunction(f){
   //Then push the movement to the animation queue:
   animationQueue.push({
     start: performance.now(),
-    duration: 3000,
+    duration: 1500,
     initial: initial,
     final: final,
     callback: (t) => {
