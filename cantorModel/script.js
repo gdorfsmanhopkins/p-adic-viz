@@ -10,6 +10,7 @@
 * * Get the right sizing options working.
 * * Optomize to improve speed (this may be just a canvas issue?)
 * * Introduce transparency to tracers
+* * Implement Q_p, and maybe division?
 *
 */
 
@@ -45,6 +46,8 @@ var traceLines = false;
 var radMult = 3;
 var radExp = 2.5;
 var pointRadius = 1;
+
+var radiusMultiplyer = screenHeight/8;
 //Make the color scheme adjustable
 var colorMix = 1;
 
@@ -56,7 +59,7 @@ var colors = [];
 initialize();
 
 //Initialize the settings GUI
-var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Settings")
+var settings = QuickSettings.create(screenWidth/10,screenHeight/10,"Controls");
 settings.addDropDown("Prime",[3,5,7,11],function setPrime(value){
   p=value.value;
   if(p==2){
@@ -67,6 +70,7 @@ settings.addDropDown("Prime",[3,5,7,11],function setPrime(value){
     radMult = 3;
     radExp = 2.5;
     pointRadius = 1;
+
   }
   if(p==5){
     n=5;
@@ -86,16 +90,12 @@ settings.addDropDown("Prime",[3,5,7,11],function setPrime(value){
     radExp = 3;
     pointRadius = 2;
   }
+  //Also adjust the stylesettings to the defaults
+  styleSettings.setValue("Point Spacing",radMult);
+  styleSettings.setValue("Point Scaling",radExp);
+  styleSettings.setValue("Point Size",pointRadius);
   initialize();
 });
-settings.addBoolean("Trace Lines",false,function traceSwap(value){traceLines = value})
-settings.addRange("Color Adjustment",0,100,0,1,function adjustColor(value){
-  console.log("calling")
-  colorMix = 1+value/100;
-  console.log(colorMix);
-  initializeColors();
-  drawPoints();
-})
 settings.addNumber("Multiply by m",-(p**n),p**n,1,1,function setMultiplyer(value){m=value});
 settings.addNumber("Add b",-(p**n),p**n,0,1,function setAddition(value){b = value});
 settings.addButton("Apply f(x) = mx+b",function applyLinearFunction(){applyFunction(function f(x){return m*x+b})});
@@ -103,6 +103,31 @@ settings.addNumber("Exponential coefficient A",-(p**n),p**n,1,1,function setExpM
 settings.addNumber("Exponentiate by e",-(p*p),p*p,1,1,function setExponent(value){e = value});
 settings.addButton("Apply f(x) = Ax^e",function applyExponentiation(){applyFunction(function f(x){return A*(x**e)})});
 settings.addButton("Reset",function redo(){initialize()});
+
+var styleSettings = QuickSettings.create(9*screenWidth/10,screenHeight/10,"Style Settings");
+styleSettings.addBoolean("Trace Lines",false,function traceSwap(value){traceLines = value})
+styleSettings.addRange("Color Adjustment",0,100,0,1,function adjustColor(value){
+  console.log("calling")
+  colorMix = 1+value/100;
+  console.log(colorMix);
+  initializeColors();
+  drawPoints();
+})
+styleSettings.addRange("Point Size",0,5,1,1,function adjustPointSize(value){
+  pointRadius = value;
+  initializePointsList();
+  drawPoints();
+})
+styleSettings.addRange("Point Spacing",1,5,3,.1,function adjustSpacing(value){
+  radMult = value;
+  initializePointsList();
+  drawPoints();
+});
+styleSettings.addRange("Point Scaling",1,5,2.5,.1,function adjustScaling(value){
+  radExp = value;
+  initializePointsList();
+  drawPoints();
+});
 
 //p-adic stuff
 function computeBaseP(n){
@@ -158,9 +183,8 @@ function computeLocation(t){
   coordinates.push(origin[0]);
   coordinates.push(origin[1]);
   for(var i=0;i<n;i++){
-    //if(t[i]) does the asymetric disk model
-    //if(t[i]>=0) does the symmetric model with 0 in the corner
     var radius = screenHeight/(radMult*((i+1)**radExp));
+    //var radius = radiusMultiplyer/(p**(i));
     var theta;
     if(t[i]){
       theta = 2*Math.PI*t[i]/p;
@@ -208,7 +232,7 @@ function applyFunction(f){
     }
   })
 }
-//trace lines:
+//traces lines
 function trace(from){
   for(var i=0;i<p**n;i++){
     ctx.beginPath();
